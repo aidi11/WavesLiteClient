@@ -1,0 +1,1196 @@
+
+<!--
+/******************************************************************************
+* Copyright © 2016 The Waves Developers.                                     *
+*                                                                            *
+* See the LICENSE file at                                                    *
+* the top-level directory of this distribution for the individual copyright  *
+* holder information and the developer policies on copyright and licensing.  *
+*                                                                            *
+* Unless otherwise agreed in a custom licensing agreement, no part of the    *
+* Waves software, including this file may be copied, modified, propagated    *
+* or distributed except according to the terms contained in the LICENSE file *
+*                                                                            *
+* Removal or modification of this copyright notice is prohibited.            *
+*                                                                            *
+******************************************************************************/
+-->
+
+<!DOCTYPE html>
+<html ng-app="app" ng-csp>
+<head>
+  <meta charset="utf-8">
+  <title>Waves Lite Client - Flexpay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/waves-lite-client-styles-0.5.15.css">
+
+  <link href="img/favicon.ico" type="image/x-icon" rel="shortcut icon">
+</head>
+
+<body ng-controller="homeController as home" ng-switch on="home.screen">
+
+<!-- LOADER -->
+<div ng-controller="splashController as splash" id="bg-spin" class="noSelect" ng-show="home.screen === 'splash-screen'">
+  <div id="logo-container-centered" class="centerIt">
+    <div id="logoo">
+      <img id="logo-spin" src="img/flexpaylogo.png" />
+      <p id="networkCheck">Carregando...</p>
+    </div>
+  </div>
+</div>
+
+<!-- LOG IN AREA -->
+<div id="lockscreen" class="userBG" ng-controller="accountsController as accounts" ng-switch-when="accounts-screen" ng-cloak>
+  <table id="lockscreenTable">
+
+    <thead>
+    <div id="logoNversion">
+      <img src="img/flexpay.png" />
+      <p ng-class='{testnet: isTestnet()}'>{{::home.title}} <span class="wlcversion">{{::home.version}}</span></p>
+    </div>
+    </thead>
+
+    <tbody>
+    <tr>
+      <td>
+        <!-- Accounts -->
+        <div id="accounts">
+          <h2 id="AccHeader">{{accounts.caption}}</h2>
+          <div class="wavesAccounts" ng-controller="accountListController as list" ng-show="accounts.mode === 'list'">
+            <p class="loginAccountDiv" ng-repeat="account in list.accounts track by $index">
+                                    <span class="loginAccount fade" tooltipster tooltip-theme="tooltipster-theme1" title="Entrar nesta conta." ng-click="list.signIn(account)"> <br/>
+                                        <b>{{::account.name}}</b> <span class="divider-1"></span> <small>{{::account.address}}</small>
+                                    </span>
+              <span class="clipSpan" tooltipster tooltip-theme="tooltipster-theme1" ngclipboard title="Copie este endereço para o clipboard." data-clipboard-text="{{::account.address}}" ngclipboard-success="clipboardOk()"></span>
+              <span class="divider-1"></span>
+              <button class="removeAccount wButtonAlt fade" tooltipster tooltip-theme="tooltipster-theme1" title="Remova esta conta da lista." ng-click="list.showRemoveWarning($index)">
+                <span class="wButton-icon"><img src="img/wIcon_x.svg"></span>REMOVER
+              </button>
+            </p>
+
+            <button id="import_account" class="wButton fade" tooltipster tooltip-theme="tooltipster-theme1" title="Clique aqui para importar uma conta já existente." ng-click="list.importAccount()">IMPORTAR CONTA</button>
+            <span class="divider-1"></span>
+            <button id="create_account" class="wButton fade" tooltipster tooltip-theme="tooltipster-theme1" title="Clique aqui para criar uma nova conta." ng-click="list.createAccount()">NOVA CONTA</button>
+            <br/>
+
+            <!-- Remove Account popup -->
+            <div id="account-remove-popup" waves-dialog on-dialog-ok="list.removeAccount()" is-error="true" ok-button-caption="REMOVE">
+              <h2 class="sectionHeader">REMOVER CONTA - AVISO</h2>
+              <p class="dialog-text">Este recurso remove completamente a conta deste dispositivo.</p>
+              <p class="dialog-text">A conta não será eliminada nem destruída, mas, em vez disso, não será mais mostrada na "Lista de Contas" na inicialização do cliente.</p>
+              <p class="dialog-text">Você sempre poderá gerar novamente sua conta neste dispositivo basta usar o recurso "Importar Conta" e inserir sua SEED.</p>
+              <p class="dialog-text">Clique no botão REMOVER para prosseguir com a remoção da conta ou CANCELAR para retornar à tela anterior.</p>
+            </div>
+          </div>
+
+          <!-- Seed input -->
+          <div id="create-seed" ng-controller="accountSeedController as vm" ng-show="accounts.mode === 'create-seed'">
+            <form id="account-seed-form" name="accountSeedForm" ng-submit="vm.checkSeedAndRegister(accountSeedForm)" novalidate ng-validate="vm.validationOptions">
+
+              <button id="generateRandomSeed" class="wButton fade" ng-click="vm.generateSeed()" type="button">GERAR NOVA SEED</button>
+              <br/><br/>
+              <div class="form-field">
+                <label for="walletSeed">SEED DA CARTEIRA</label>
+                <br/>
+                <textarea id="walletSeed" rows="4" name="walletSeed" class="wInput" focus-me="accounts.mode === 'create-seed'" ng-model="vm.seed" ng-change="vm.refreshAddress()" ng-model-options="{ debounce: 750 }" ng-trim="false"></textarea>
+                <span class="clipSpan" tooltipster tooltip-theme="tooltipster-theme1" title="Copie a SEED para para o clipboard." data-clipboard-target="#walletSeed" data-clipboard-message-success="SEED da carteira copiada com sucesso para o clipboard" ></span>
+                <br/>
+              </div>
+              <br/>
+
+              <div class="wPop-content">
+                <div>ENDEREÇO
+                  <br/>
+                  <span>{{vm.displayAddress}}</span>
+                </div>
+              </div>
+              <button class="wButton fade" type="submit">REGISTRAR A CONTA</button>
+              <span class="divider-2"></span>
+              <button class="wButton fade" type="reset" ng-click="vm.back()">VOLTAR</button>
+
+              <div id="seed-whitespace-popup" waves-dialog on-dialog-ok="vm.registerAccount()" closeable="false" ok-button-caption="PROSSEGUIR">
+                <h2 class="sectionHeader">AVISO SOBRE A SEED</h2>
+                <p class="dialog-text">Sua SEED da carteira contém um ou mais caracteres de espaço em branco (preste atenção nisso).</p>
+                <p class="dialog-text">Uma SEED com um espaço em branco no final e uma SEED sem esse espaço em branco no final são diferentes e resultarão em diferentes endereços de carteira (preste atenção nisso).</p>
+                <p class="dialog-text">É altamente recomendável que você evite espaços em branco à direita na sua SEED. Se você entede as implicações de incluir um espaço em branco à direita
+                de sua SEED, pressione <b> PROSSEGUIR </b>. OU Pressione <b> CANCELAR </b> e feche essa caixa de diálogo para editar sua SEED. <br/> </ p>
+              </div>
+            </form>
+          </div>
+
+          <div id="login-wPop-new" waves-dialog ok-button-caption="EU ENTENDI" on-dialog-ok="" cancel-button-visible="false" closeable="false">
+            <h2 class="sectionHeader">NOVA CONTA</h2>
+            <div class="plate-warning">
+              <p class="dialog-text" style="font-weight: bold;">Trate sua SEED (frase de recuperaçãore) com cuidado!</p>
+              <p class="dialog-text">Com a posse apenas da SEED qualquer um pode ter acesso à sua carteira.</p>
+              <p class="dialog-text">1. Não coloque sua SEED em qualquer lugar, confie apenas em canais oficiais.<br/> Preste muita atenção ao domínio do site.</p>
+              <p class="dialog-text">Se alguém acessá-la, você perderá seus fundos.</p>
+              <p class="dialog-text">2. Armazene sua SEED com segurança, ela é a única capaz <br/> de restaurar sua carteira. </P>
+            </div>
+          </div>
+
+          <!-- store account on the current device -->
+          <div id="register" ng-controller="accountRegisterController as vm" ng-show="accounts.mode === 'register'">
+            <form id="register-form" name="registerForm" novalidate ng-submit="vm.saveAccountAndSignIn(registerForm)" ng-validate="vm.validationOptions">
+              <div class="wPop-content">
+                <label for="readonlySeed">SEED DA CARTEIRA</label>
+                <br/>
+                <textarea id="readonlySeed" rows="4" class="wInput" ng-model="vm.seed" ng-model-options="{ getterSetter: true }" readonly></textarea>
+                <br/><br/>
+                <div>ENDEREÇO
+                  <br/>
+                  <span>{{accounts.displayAddress}}</span>
+                </div>
+                <br/>
+
+                <div class="form-field">
+                  <label for="walletName">
+                    NOME<span class="infoSpan" tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="É possível atribuir um nome à sua conta
+                                                <br/>
+                                                temos com isso o objetivo de torna-la mais fácil de lembrar,
+                                                <br/>
+                                                sinta-se a vontade para usar o campo abaixo.
+                                                <br/><br/>
+                                                <i>NOTA: Isso é opcional, as contas não são
+                                                <br/>
+                                                obrigadas a possuir um nome.</i>"></span>
+                    <br/>
+                  </label>
+                  <input type="text" id="walletName" name="walletName" class="wInput" ng-model="vm.name" focus-me="accounts.mode === 'register'"/>
+                </div>
+                <br/>
+                <div class="form-field">
+                  <label for="walletPassword">
+                    SENHA<span class="infoSpan" tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="Usada para criptografar a SEED da sua carteira, a senha
+                                                <br/>
+                                                será solicitada no momento do login.
+                                                <br/><br/>
+                                                É imperativo que o usuário a mantenha em segurança
+                                                <br/>
+                                                a todo momento."></span>
+                  </label>
+                  <br/>
+                  <input type="password" id="walletPassword" name="walletPassword" class="wInput" ng-model="vm.password"/>
+                </div>
+                <br/>
+                <div class="form-field">
+                  <label for="walletPasswordConfirm">CONFIRMAÇÃO DE SENHA</label>
+                  <br/>
+                  <input type="password" id="walletPasswordConfirm" name="walletPasswordConfirm" class="wInput" ng-model="vm.confirmPassword"/>
+                </div>
+                <br/>
+
+                <button class="wButton fade" type="submit">REGISTRAR</button>
+                <span class="divider-2"></span>
+                <button class="wButton fade" type="reset" ng-click="vm.cancel()">CANCELAR</button>
+              </div>
+            </form>
+          </div>
+          <!-- log in to selected account -->
+          <div id="account-login" ng-controller="accountLoginController as vm" ng-show="accounts.mode === 'login'">
+            <form id="login-form">
+              <div>CONTA
+                <br/>
+                <span>{{accounts.displayAddress}}</span>
+              </div>
+              <br/>
+
+              <label for="accountPassword">SENHA</label>
+              <br/>
+
+              <input type="password" id="accountPassword" class="wInput" ng-model="vm.password" focus-me="accounts.mode === 'login'"/>
+              <br/><br/>
+
+              <button class="wButton fade" ng-click="vm.signIn()">ENTRAR</button>
+              <span class="divider-2"></span>
+              <button class="wButton fade" ng-click="vm.cancel()">CANCELAR</button>
+            </form>
+          </div>
+        </div>
+      </td>
+    </tr>
+    </tbody>
+
+  </table>
+</div>
+
+<div id="wrapper" ng-switch-when="main-screen" ng-cloak>
+  <!-- shared blocks -->
+  <div id="feat-not-active" waves-dialog global="true" show-buttons="false" is-error="true">
+    <h2 class="sectionHeader">AVISO</h2>
+    <p class="dialog-text">Esse recurso ainda está em desenvolvimento e não está ativo durante a fase alfa.</p>
+    <p class="dialog-text">Siga nossos canais de mídia social para se manter atualizado com as últimas melhorias e desenvolvimentos.</p>
+    <div class="modal-media">
+      <a href="https://blog.wavesplatform.com/" target="_blank"><img class="modal-media-img" src="img/blog_icon.svg" /></a>
+      <a href="https://twitter.com/wavesplatform" target="_blank"><img class="modal-media-img" src="img/twitter_icon.svg" /></a>
+      <a href="https://www.facebook.com/wavesplatform" target="_blank"><img class="modal-media-img" src="img/facebook_icon.svg" /></a>
+      <a href="http://slack.wavesplatform.com/" target="_blank"><img class="modal-media-img" src="img/slack_icon.svg" /></a>
+      <a href="https://www.reddit.com/r/Wavesplatform/" target="_blank"><img class="modal-media-img" src="img/reddit_icon.svg" /></a>
+      <a href="https://vk.com/wavesplatform" target="_blank"><img id="icon-blog" class="modal-media-img" src="img/vk_icon.svg" /></a>
+    </div>
+  </div>
+  <!-- /shared blocks-->
+
+  <!-- HEADER -->
+  <header class="fFade noSelect" ng-controller="mainMenuController as menu">
+    <img id="topLogoH" src="img/flexpay.png" alt="Waves platform logo horizontal" />
+    <div id="logoNversion2">
+      <img src="img/flexpay.png" />
+      <p ng-class='{testnet: isTestnet()}'>{{::home.title}} <span class="wlcversion">{{::home.version}}</span></p>
+    </div>
+    <span id="version" class="centerIt">
+                <span>Endereço:</span>
+                <span id="wavesAccountAddress" class="clipSpan" tooltipster tooltip-theme="tooltipster-theme3" title="Copie esse endereço para o clipboard." ngclipboard data-clipboard-text="{{::menu.address}}" ngclipboard-success="clipboardOk()">{{::menu.address}}</span>
+                <span id="wavesAccountAddressQr" ng-click="menu.showAddressQr()">QR</span>
+                <span class="divider-2"></span>
+                <span class="inlineParagraph">Bloco:</span> <span id="blockheight">{{menu.blockHeight}}</span>
+            </span>
+
+    <div class="noDisp">
+      <div id="address-qr-modal" waves-dialog global="true" no-support-link="true" cancel-button-visible="false" ok-button-caption="CLOSE">
+        <waves-qr-code size="300" value="::menu.addressQr"></waves-qr-code>
+      </div>
+    </div>
+
+    <div id="header-Iconset">
+      <a ng-click="menu.showBackupDialog()">
+        <img class="header-Icon fade" tooltipster tooltip-theme="tooltipster-theme2" src="img/uiTB-iconset-backup.svg" alt="Backup" title="Backup"/>
+      </a>
+      <div id="header-wPop-backup" waves-dialog global="true" on-dialog-ok="menu.backup()" ok-button-caption="COPIAR" cancel-button-caption="FECHAR">
+        <h2 class="sectionHeader">INFORMAÇÕES DE BACKUP DA CONTA</h2>
+        <p>Esta área contém as informações básicas da sua conta. Clique no botão<span class="fontBold"> COPIAR</span> para copiar o conteúdo para a área o clipboard ou<span class="fontBold"> FECHAR</span> para sair.</p></br>
+        <form id="backupForm">
+          <div class="plate-warning">
+            <p class="dialog-text" style="font-weight: bold;">Trate sua SEED (frase de recuperação) com MUITO cuidado!</p>
+            <p class="dialog-text">Apenas a SEED pode fornecer acesso à sua carteira.</p>
+            <p class="dialog-text">1. Não coloque sua SEED em qualquer lugar, exceto em 'Waves clients' oficiais (preste muita atenção no domínio do site).</p>
+            <p class="dialog-text">Se alguém acessá-la, você perderá seus fundos.</p>
+            <p class="dialog-text">2. Armazene sua SEED com segurança, ela é o única<br/>forma de restaurar a sua carteira.</p>
+          </div>
+          <label for="seedBackup">SEED</label><br/>
+          <textarea id="seedBackup" class="wInput" rows="4" readonly ng-model="menu.seed"></textarea><br/>
+          <label for="encodedSeedBackup">SEED CODIFICADA</label><br/>
+          <textarea id="encodedSeedBackup" class="wInput" rows="4" readonly ng-model="menu.encodedSeed"></textarea><br/>
+          <label for="privateKeyBackup">CHAVE PRIVADA</label><br/>
+          <input id="privateKeyBackup" class="wInput" type="text" readonly ng-model="menu.privateKey"/><br/>
+          <label for="publicKeyBackup">CHAVE PÚBLICA</label><br/>
+          <input id="publicKeyBackup" class="wInput" type="text" readonly ng-model="menu.publicKey"/><br/>
+          <label for="addressBackup">ENDEREÇO</label><br/>
+          <input id="addressBackup" class="wInput" type="text" readonly ng-model="menu.address"/>
+        </form>
+      </div>
+      <a ng-click="home.featureUnderDevelopment()">
+        <img class="header-Icon fade" tooltipster tooltip-theme="tooltipster-theme2" src="img/uiTB-iconset-preferences.svg" alt="Preferências" title="Preferências"/>
+      </a>
+      <a ng-click="menu.showProfileDialog()">
+        <img class="header-Icon fade" tooltipster tooltip-theme="tooltipster-theme2" src="img/uiTB-iconset-profile.svg" alt="Perfil do Usuário" title="Perfil do Usuário"/>
+      </a>
+      <div class="noDisp" ng-controller="createAliasController as create">
+        <div id="create-alias-dialog" waves-dialog global="true" ok-button-caption="CRIAR" on-dialog-ok="create.confirmCreateAlias(create.form)">
+          <div class="existing-aliases">
+            <h2 class="sectionHeader">SEU NOME</h2>
+            <div ng-if="create.aliasList !== null">
+              <span ng-repeat="alias in create.aliasList"><span class="alias">{{alias}}</span>&nbsp;</span>
+              <span ng-if="create.aliasList.length === 0">Você não tem nenhum nome ainda</span>
+            </div>
+            <div ng-if="create.aliasList === null">
+              <span>Carregando...</span>
+            </div>
+          </div>
+          <h2 class="sectionHeader">CRIE UM NOVO NOME</h2>
+          <p>Aqui você pode atribuir um nome simbólico ao seu endereço</p>
+          <form name="create.form" novalidate ng-validate="create.validationOptions">
+            <table>
+              <tbody>
+              <tr>
+                <td width="30%">Nome</td>
+                <td><input class="wInput form-control" name="aliasName" type="text" placeholder="Nome" ng-model="create.alias"/></td>
+              </tr>
+              <tr>
+                <td>Taxas Waves</td>
+                <td>{{::create.fee.formatAmount(true)}} {{::create.fee.currency.displayName}}</td>
+              </tr>
+              </tbody>
+            </table>
+          </form>
+        </div>
+        <div id="create-alias-confirmation" waves-dialog global="true" ok-button-caption="CONFIRMAR" ok-button-enabled="!create.broadcast.pending" on-dialog-ok="create.broadcastTransaction()">
+          <div class="dialog-confirmation">
+            <p class="dialog-text">Você vai criar um novo nome <span class="confirmation-value">{{create.alias}}</span>
+              para seu endereço.
+            </p>
+            <p class="dialog-text">Pressione <span class="fontBold"> CONFIRMAR </span>para executar ou <span class="fontBold"> CANCELAR </span> para abandonar a operação.</p>
+          </div>
+        </div>
+      </div>
+      <a ng-click="home.logout()">
+        <img class="header-Icon fade" tooltipster tooltip-theme="tooltipster-theme2" src="img/uiTB-iconset-logout.svg" alt="Sair" title="Sair" />
+      </a>
+    </div>
+    <waves-support-link class="in-header light"></waves-support-link>
+  </header>
+  <!-- / HEADER -->
+
+  <div id="navigationContainer" ng-controller="navigationController as nav">
+    <!-- APPLICATION TAB SELECTORS -->
+    <section id="tabs" class="fFade noSelect">
+      <div id="tabs-Iconset" class="centerIt">
+                    <span waves-tab
+                          on-select="nav.changeTab(pageId)"
+                          current-page-id="nav.currentTab"
+                          page-id="wallet"
+                          caption="'Wallet tab'"
+                          tooltipster
+                          tooltip-html
+                          tooltip-theme="tooltipster-theme3"
+                          tooltip-title="<center><u>Carteiras</u></center><br/>Área contendo as carteiras principais."></span>
+        <span waves-tab
+              on-select="nav.changeTab(pageId)"
+              current-page-id="nav.currentTab"
+              page-id="portfolio"
+              caption="'Portfolio tab'"
+              tooltipster
+              tooltip-html
+              tooltip-theme="tooltipster-theme3"
+              tooltip-title="<center><u>Portfólio</u></center><br/>Exibe todos os seus ativos, tanto digitais quanto<br/> físicos, além de permitir transferências."></span>
+        <span waves-tab
+              on-select="nav.changeTab(pageId)"
+              current-page-id="nav.currentTab"
+              page-id="exchange"
+              caption="'Exchange tab'"
+              tooltipster
+              tooltip-html
+              tooltip-theme="tooltipster-theme3"
+              tooltip-title="<center><u>Exchange Decentralizada Waves</u></center><br/>Aqui você terá acesso aos mercados da Waves, onde você pode<br/>convenientemente comprar, vender e trocar tokens."></span>
+        <span waves-tab
+              on-select="nav.changeTab(pageId)"
+              current-page-id="nav.currentTab"
+              page-id="leasing"
+              caption="'Waves leasing tab'"
+              tooltipster
+              tooltip-html
+              tooltip-theme="tooltipster-theme3"
+              tooltip-title="<center><u>Leasing</u></center><br/>Faça leasing com suas Waves."></span>
+        <!--<span waves-tab on-select="nav.changeTab(pageId)" current-page-id="nav.currentTab" page-id="voting" caption="'Voting tab'" tooltipster tooltip-html-->
+        <!--tooltip-theme="tooltipster-theme3" tooltip-title="<center><u>Voting Area</u></center><br/>Decentralized voting utility."></span>-->
+        <span waves-tab
+              on-select="nav.changeTab(pageId)"
+              current-page-id="nav.currentTab"
+              page-id="history"
+              caption="'History tab'"
+              tooltipster
+              tooltip-html
+              tooltip-theme="tooltipster-theme3"
+              tooltip-title="<center><u>Histórico</u></center><br/>Acesse todos os seus registros de transação."></span>
+        <span waves-tab
+              on-select="nav.changeTab(pageId)"
+              current-page-id="nav.currentTab"
+              page-id="tokens"
+              caption="'Tokens Creation tab'"
+              tooltipster
+              tooltip-html
+              tooltip-theme="tooltipster-theme3"
+              tooltip-title="<center><u>Crie seu próprio token</u></center><br/>Área na qual os ativos podem ser criados."></span>
+        <!--<span waves-tab on-select="nav.changeTab(pageId)" current-page-id="nav.currentTab" page-id="messages" caption="'Messages tab'" tooltipster tooltip-html-->
+        <!--tooltip-theme="tooltipster-theme3" tooltip-title="<center><u>Decentralized Messenger</u></center><br/>Allows private communication between Waves users."></span>-->
+        <span waves-tab
+              on-select="nav.changeTab(pageId)"
+              current-page-id="nav.currentTab"
+              page-id="community"
+              caption="'Community tab'"
+              tooltipster
+              tooltip-html
+              tooltip-theme="tooltipster-theme3"
+              tooltip-title="<center><u>Community tab</u></center><br/>Resources to learn more about Waves project such as <br/>forums, blogs, websites, etc."></span>
+      </div>
+    </section>
+
+    <section id="mainBody" class="wScroll">
+      <!-- BODY CONTENT -->
+      <section id="mBBody" class="fFade" ng-switch on="nav.currentTab">
+        <!-- WALLET TAB -->
+        <div id="mBB-wallet" class="mBB-content" ng-switch-when="wallet" ng-controller="walletListController as walletList">
+
+          <div class="noDisp" ng-controller="walletSendController as send">
+            <div id="wB-butSend-WAV" waves-dialog ok-button-caption="FINALIZAR" cancel-button-visible="false" on-dialog-ok="send.submitTransfer(send.form)">
+              <form id="send-waves-form" name="send.form" class="paymentForm" novalidate ng-validate="send.validationOptions">
+                <h2 class="sectionHeader">ENVIAR PAGAMENTO EM: {{send.currency}}</h2>
+                <table>
+                  <div class="balanceAmt">
+                    <div ng-if="!send.feeAndTransferAssetsAreTheSame"><p>Balanço do ativo: </p><span class="balancewaves">{{send.assetBalance | moneyLong:true}}</span><br/></div>
+                    <p>Balanço de Waves: </p><span class="balancewaves">{{send.feeAssetBalance | moneyLong:true}}</span>
+                  </div>
+                  <thead>
+                  <tr>
+                    <th>DESCRIÇÃO</th>
+                    <th>INFORMAÇÕES</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td>Endereço recebedor</td>
+                    <td>
+                      <div class="form-field">
+                        <input class="wInput form-control" name="sendRecipient" type="text" placeholder="Destinatário" ng-model="send.recipient" />
+                      </div>
+                    </td>
+
+                  </tr>
+                  <tr>
+                    <td>Quantidade</td>
+                    <td>
+                      <div class="form-field">
+                        <input class="wInput form-control" name="sendAmount" type="text" placeholder="Amount" ng-model="send.amount" decimal-input-restrictor />
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Informações extras</td>
+                    <td>
+                      <div class="form-field">
+                        <textarea rows="2" class="wInput form-control" name="sendAttachment" ng-model="send.attachment"></textarea>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Taxa</td>
+                    <td>
+                      <md-autocomplete md-input-name="sendFee" md-selected-item="send.autocomplete.selectedFee" md-search-text="send.autocomplete.searchText"
+                                       md-items="item in send.autocomplete.querySearch(send.autocomplete.searchText)"
+                                       md-item-text="item.amount.toString()" md-min-length="0" md-require-match="" md-no-cache="true"
+                                       md-menu-class="popup-autocomplete" class="fee-autocomplete">
+                        <md-item-template>
+                          <span md-highlight-text="send.autocomplete.searchText">{{item.displayText}}</span>
+                        </md-item-template>
+                      </md-autocomplete>
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+              </form>
+            </div>
+            <div id="send-payment-confirmation" waves-dialog ok-button-caption="CONFIRM" ok-button-enabled="!send.broadcast.pending" on-dialog-ok="send.broadcastTransaction()">
+              <div class="dialog-confirmation">
+                <p class="dialog-text">You are sending <span class="confirmation-value">{{send.confirm.amount | moneyLong:true}}</span> with
+                  <span class="confirmation-value">{{send.confirm.fee | moneyLong:true}}</span> fee to the address<br/>
+                  <span class="confirmation-value">{{send.confirm.recipient}}</span>
+                </p>
+                <p class="dialog-text">Please <span class="fontBold"> CONFIRM </span>to execute or <span class="fontBold"> CANCEL </span> to discard.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletWithdrawController as withdraw" data-type="crypto">
+            <div id="withdraw-crypto-dialog" waves-dialog ok-button-caption="WITHDRAW" on-dialog-ok="withdraw.confirmWithdraw(withdraw.assetForm)">
+              <h2 class="sectionHeader">WITHDRAW: {{withdraw.sourceCurrency}}</h2>
+              <p class="dialog-text" ng-if="withdraw.isEthereum">Do not withdraw ETH to smart contract addresses!<br/>Your transaction may fail if their execution require additional fees.</p>
+              <form id="withdraw-asset-form" name="withdraw.assetForm" novalidate ng-validate="withdraw.validationOptions">
+                <table class="form-table">
+                  <div class="balanceAmt">
+                    <div><p>Asset balance: </p><span class="balancewaves">{{withdraw.assetBalance | moneyLong:true}}</span><br/></div>
+                  </div>
+                  <tbody>
+                  <tr>
+                    <td width="30%">{{withdraw.sourceCurrency}} address</td>
+                    <td><input class="wInput form-control" name="withdrawAddress" type="text" placeholder="{{withdraw.sourceCurrency}} address" ng-model="withdraw.recipient"/></td>
+                  </tr>
+                  <tr>
+                    <td>Amount</td>
+                    <td><input class="wInput form-control" name="withdrawAmount" type="text" placeholder="Withdraw amount" ng-model="withdraw.amount" ng-change="withdraw.refreshTotal()" decimal-input-restrictor/></td>
+                  </tr>
+                  <tr>
+                    <td>Gateway fee</td>
+                    <td><input disabled class="wInput form-control" name="gatewayFee" type="text" placeholder="Gateway fee" ng-model="withdraw.feeOut" decimal-input-restrictor/></td>
+                  </tr>
+                  <tr>
+                    <td>Total</td>
+                    <td><input class="wInput form-control" name="withdrawTotal" type="text" placeholder="Total amount" ng-model="withdraw.total" ng-change="withdraw.refreshAmount()" decimal-input-restrictor/></td>
+                  </tr>
+                  <tr>
+                    <td class="padded">Waves fee</td>
+                    <td class="padded">
+                      <md-autocomplete md-input-name="withdrawFee" md-selected-item="withdraw.autocomplete.selectedFee" md-search-text="withdraw.autocomplete.searchText"
+                                       md-items="item in withdraw.autocomplete.querySearch(withdraw.autocomplete.searchText)"
+                                       md-item-text="item.amount.toString()" md-min-length="0" md-require-match="" md-no-cache="true"
+                                       md-menu-class="popup-autocomplete" class="fee-autocomplete">
+                        <md-item-template>
+                          <span md-highlight-text="withdraw.autocomplete.searchText">{{item.displayText}}</span>
+                        </md-item-template>
+                      </md-autocomplete>
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+              </form>
+            </div>
+            <div id="withdraw-confirmation" waves-dialog ok-button-caption="CONFIRM" ok-button-enabled="!withdraw.broadcast.pending" on-dialog-ok="withdraw.broadcastTransaction()">
+              <div class="dialog-confirmation">
+                <p class="dialog-text">You are sending <span class="confirmation-value">{{withdraw.confirm.amount | moneyLong:true}}</span> with
+                  <span class="confirmation-value">{{withdraw.confirm.fee | moneyLong:true}}</span> fee to the Waves gateway address <br/>
+                  <span class="confirmation-value">{{withdraw.confirm.gatewayAddress}}</span>.
+                </p>
+                <p class="dialog-text">The gateway will transfer these funds to your {{withdraw.sourceCurrency}} address: <span class="confirmation-value">{{withdraw.confirm.recipient}}</span>.</p>
+                <p class="dialog-text">Press <span class="fontBold"> CONFIRM </span>to execute or <span class="fontBold"> CANCEL </span> to discard this operation.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletWithdrawController as withdraw" data-type="fiat">
+            <div id="withdraw-fiat-dialog" waves-dialog ok-button-caption="FECHAR" cancel-button-visible="false">
+              <h2 class="sectionHeader">Retirada: {{withdraw.sourceCurrency}}</h2>
+              <p class="dialog-text textCenter">
+                Esta carteira não oferece esse serviço. Apenas em Reais (BRL)<br/>
+                <br/>
+                <p class="dialog-text textCenter">
+                  Se você tiver alguma dúvida,
+                  <br/>
+                por favor mande um e-mail para<br/>
+                <span class="email"
+                      title="Copie este endereço para o clipboard"
+                      tooltipster
+                      tooltip-theme="tooltipster-theme1"
+                      ngclipboard
+                      data-clipboard-text="{{withdraw.gatewayEmail}}"
+                      ngclipboard-success="clipboardOk()">{{withdraw.gatewayEmail}}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletDepositController as deposit" data-currency="BTC">
+            <div id="deposit-btc-dialog" waves-dialog ok-button-caption="CLOSE" cancel-button-visible="false">
+              <h2 class="sectionHeader">DEPOSIT: BTC</h2>
+              <p class="dialog-text textCenter">
+                <img src="img/visa_mastercard_116x35.gif" width="116" height="35"><span class="divider-2"></span>
+                <button class="wButton wButton-dialog" ng-click="walletList.depositFromCard(deposit.assetBalance.currency)">
+                  Buy BTC from your credit card
+                </button>
+              </p>
+              <p class="dialog-text">To deposit BTC to your Waves account, please send BTC to the address below.<br/>
+                The minimum amount of deposit is <span class="fontBold">{{::deposit.btc.minimumAmount}} BTC</span>.</p>
+              <table class="wavesTable bitcoin-requisites">
+                <tbody>
+                <tr>
+                  <td><b>{{deposit.btc.bitcoinAddress}}</b></td>
+                </tr>
+                </tbody>
+              </table>
+              <p class="dialog-text">Enter this address into your Bitcoin client or wallet. Once the transaction is confirmed, <br/>
+                the gateway will process the transfer of BTC to a token in your Waves account.</p>
+              <p class="dialog-text">Please note that the gateway doesn't apply any fees for this operation.</p>
+              <p class="dialog-text">You can scan this QR-code in order to copy the address.<br/>
+                Amount is optional but it will be added to the QR-code if present.</p>
+              <div class="textCenter">
+                <input class="wInput small" type="text" placeholder="Amount" ng-model="deposit.btc.bitcoinAmount" ng-change="deposit.refreshBTCUri()" decimal-input-restrictor />
+                <br/>
+                <br/>
+                <a ng-href="{{deposit.btc.bitcoinUri}}">
+                  <waves-qr-code class="center" size="180" value="deposit.btc.bitcoinUri"></waves-qr-code>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletDepositController as deposit" data-currency="ETH">
+            <div id="deposit-eth-dialog" waves-dialog ok-button-caption="FECHAR" cancel-button-visible="false">
+              <h2 class="sectionHeader">DEPOSIT: ETH</h2>
+              <div class="plate-warning">
+                <p><b>Do not deposit ETH from smart contracts!</b></p>
+                <p>Check if your wallet or exchange uses smart-contracts to withdraw ETH.<br/>
+                   We do not accept such transactions and can’t refund them.<br/>
+                   You will lose that money.</p>
+              </div>
+              <p class="dialog-text">To deposit ETH to your Waves account, please send ETH to the address below.<br/>
+                The minimum amount of deposit is <span class="fontBold">{{deposit.eth.minimumAmount}} ETH</span>.</p>
+              <p class="dialog-text">Please do not deposit ERC20 tokens! Only Ethereum is allowed.</p>
+              <table class="wavesTable bitcoin-requisites">
+                <tbody>
+                <tr>
+                  <td><b>{{deposit.eth.ethereumAddress}}</b></td>
+                </tr>
+                </tbody>
+              </table>
+              <p class="dialog-text">Enter this address into your Ethereum client or wallet. Once the transaction is confirmed, <br/>
+                the gateway will process the transfer of ETH to a token in your Waves account.</p>
+              <p class="dialog-text">Please note that the gateway doesn't apply any fees for this operation.</p>
+              <div class="textCenter">
+                <waves-qr-code class="center" size="180" value="deposit.eth.ethereumAddress"></waves-qr-code>
+              </div>
+            </div>
+          </div>
+
+          <div class="noDisp">
+            <div id="digilira-dialog" waves-dialog ok-button-caption="FECHAR" cancel-button-visible="false">
+              <h2 class="sectionHeader">REAL BRASILEIRO</h2>
+              <p class="dialog-text">Por favor visite <a href="https://www.flexpay.click/" target="_blank">Flexpay.click</a> gateway.</p>
+              <p class="dialog-text">Você só pode usar o Gateway Flexpay.click se tiver cidadania Brasileira.</p>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletDepositController as deposit" data-currency="LTC">
+            <div id="deposit-ltc-dialog" waves-dialog ok-button-caption="FECHAR" cancel-button-visible="false">
+              <h2 class="sectionHeader">DEPOSIT: LTC</h2>
+              <p class="dialog-text">To deposit LTC to your Waves account, please send LTC to the address below.<br/>
+                The minimum amount of deposit is <span class="fontBold">{{deposit.ltc.minimumAmount}} LTC</span>.</p>
+              <table class="wavesTable bitcoin-requisites">
+                <tbody>
+                <tr>
+                  <td><b>{{deposit.ltc.litecoinAddress}}</b></td>
+                </tr>
+                </tbody>
+              </table>
+              <p class="dialog-text">Enter this address into your Litecoin client or wallet. Once the transaction is confirmed, <br/>
+                the gateway will process the transfer of LTC to a token in your Waves account.</p>
+              <p class="dialog-text">Please note that the gateway doesn't apply any fees for this operation.</p>
+              <div class="textCenter">
+                <waves-qr-code class="center" size="180" value="deposit.ltc.litecoinAddress"></waves-qr-code>
+              </div>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletDepositController as deposit" data-currency="ZEC">
+            <div id="deposit-zec-dialog" waves-dialog ok-button-caption="CLOSE" cancel-button-visible="false">
+              <h2 class="sectionHeader">DEPOSIT: ZEC</h2>
+              <p class="dialog-text">To deposit Zcash to your Waves account, please send Zcash to the address below.<br/>
+                The minimum amount of deposit is <span class="fontBold">{{deposit.zec.minimumAmount}} ZEC</span>.</p>
+              <table class="wavesTable bitcoin-requisites">
+                <tbody>
+                <tr>
+                  <td><b>{{deposit.zec.zcashAddress}}</b></td>
+                </tr>
+                </tbody>
+              </table>
+              <p class="dialog-text">Enter this address into your Zcash client or wallet. Once the transaction is confirmed, <br/>
+                the gateway will process the transfer of Zcash to a token in your Waves account.</p>
+              <p class="dialog-text">Please note that the gateway doesn't apply any fees for this operation.</p>
+              <div class="textCenter">
+                <waves-qr-code class="center" size="180" value="deposit.zec.zcashAddress"></waves-qr-code>
+              </div>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletDepositController as deposit" data-currency="EUR">
+            <div id="deposit-eur-dialog" waves-dialog ok-button-caption="FECHAR" cancel-button-visible="false">
+              <h2 class="sectionHeader">DEPÓSITO: EURO</h2>
+              <p class="dialog-text textCenter">
+                Esta carteira não oferece esse serviço. Apenas em Reais (BRL)<br/>
+                <br/>
+                <p class="dialog-text textCenter">
+                  Se você tiver alguma dúvida,
+                  <br/>
+                por favor mande um e-mail para<br/>
+                <span class="email"
+                      title="Copie este endereço para o clipboard"
+                      tooltipster
+                      tooltip-theme="tooltipster-theme1"
+                      ngclipboard
+                      data-clipboard-text="{{withdraw.gatewayEmail}}"
+                      ngclipboard-success="clipboardOk()">{{withdraw.gatewayEmail}}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="noDisp" ng-controller="walletDepositController as deposit" data-currency="USD">
+            <div id="deposit-usd-dialog" waves-dialog ok-button-caption="FECHAR" cancel-button-visible="false">
+              <h2 class="sectionHeader">DEPÓSITO: US DOLLAR</h2>
+              <p class="dialog-text textCenter">
+                Esta carteira não oferece esse serviço. Apenas em Reais (BRL)<br/>
+                <br/>
+                <p class="dialog-text textCenter">
+                  Se você tiver alguma dúvida,
+                  <br/>
+                por favor mande um e-mail para<br/>
+                <span class="email"
+                      title="Copie este endereço para o clipboard"
+                      tooltipster
+                      tooltip-theme="tooltipster-theme1"
+                      ngclipboard
+                      data-clipboard-text="{{withdraw.gatewayEmail}}"
+                      ngclipboard-success="clipboardOk()">{{withdraw.gatewayEmail}}</span>
+              </p>
+            </div>
+          </div>
+          
+          <div class="flex-container">
+            <wallet-box class="walletBox"
+                        ng-repeat="w in walletList.wallets"
+                        balance="w.balance"
+                        on-send="walletList.send(w)"
+                        on-withdraw="walletList.withdraw(w)"
+                        on-deposit="walletList.deposit(w)"></wallet-box>
+          </div>
+          <waves-transaction-history heading="ÚLTIMAS TRANSAÇÕES"
+                                     transactions="walletList.transactions"
+                                     limit-to="10"></waves-transaction-history>
+        </div>
+        <!-- / WALLET TAB -->
+
+        <!-- PORTFOLIO TAB -->
+        <div id="mBB-portfolio" class="mBB-content wScroll" ng-switch-when="portfolio">
+          <div ng-controller="assetListController as assetList">
+            <h2 class="sectionHeader">PORTFOLIO</h2>
+            <table class="wavesTable wScroll">
+              <thead>
+              <tr>
+                <td>NOME DO ATIVO</td>
+                <td>EMISSOR</td>
+                <td>RE-EMISSÍVEL</td>
+                <td>BALANÇO</td>
+                <td>OPÇÕES</td>
+              </tr>
+              </thead>
+              <tbody>
+              <tr ng-show="assetList.noData">
+                <td colspan="5">Você não possui/não criou nenhum ativo.</td>
+              </tr>
+              <tr ng-show="!assetList.noData" ng-repeat="tx in assetList.assets | asset track by tx.id">
+                <td>
+                  <span>{{tx.name}}</span>
+                </td>
+                <td>{{tx.formatted.sender}}</td>
+                <td>{{tx.reissuable}}</td>
+                <td>{{tx.balance | moneyShort}}</td>
+                <td>
+                  <button class="wButton wButton-neg fade" ng-click="assetList.assetTransfer(tx.id)">TRANSFERIR</button><span class="divider-2"></span>
+                  <button class="wButton wButton-neg fade" ng-disabled="!tx.formatted.canReissue" ng-click="assetList.assetReissue(tx.id)">REEMITIR</button><span class="divider-2"></span>
+                  <button class="wButton wButton-neg fade" ng-click="assetList.assetDetails(tx.id)">DETALHES</button><span class="divider-2"></span>
+                  <!-- TODO: remove MASS PAY feature or re-engineer it using a centralized service
+                  <button class="wButton wButton-neg fade" ng-click="assetList.assetMassPay(tx.id)">MASS PAY</button>
+                  -->
+                </td>
+              </tr>
+              </tbody>
+            </table>
+            <div class="noDisp" ng-controller="assetDetailsController as details">
+              <div id="asset-details-dialog" waves-dialog cancel-button-visible="false">
+                <h2 class="sectionHeader">DETALHES SOBRE O ATIVO</h2>
+                <table class="wavesTable">
+                  <thead>
+                  <tr>
+                    <td>CAMPO</td>
+                    <td>DESCRIÇÃO</td>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td>Emissor:</td>
+                    <td ng-if="!details.isSenderCopiable">{{details.sender}}</td>
+                    <td ng-if="details.isSenderCopiable"><span class="clipSpan" tooltipster tooltip-theme="tooltipster-theme1" ngclipboard data-clipboard-text="{{details.sender}}" title="Copie esse endereço para o clipboard." ngclipboard-success="clipboardOk()">{{details.sender}}</span></td>
+                  </tr>
+                  <tr>
+                    <td>Identifier:</td>
+                    <td><span class="clipSpan" tooltipster tooltip-theme="tooltipster-theme1" ngclipboard data-clipboard-text="{{details.assetId}}" title="Copy this asset id to the clipboard." ngclipboard-success="clipboardOk()">{{details.assetId}}</span></td>
+                  </tr>
+
+                  <tr>
+                    <td>Name:</td>
+                    <td>{{details.name}}</td>
+                  </tr>
+                  <tr>
+                    <td>Details:</td>
+                    <td>{{details.description}}</td>
+                  </tr>
+                  <tr>
+                    <td>Total tokens:</td>
+                    <td>{{details.totalTokens}}</td>
+                  </tr>
+                  <tr>
+                    <td>Reissuable:</td>
+                    <td>{{details.reissuable}}</td>
+                  </tr>
+                  <tr>
+                    <td>Issue date:</td>
+                    <td>{{details.timestamp | formatting}}</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="noDisp" ng-controller="assetTransferController as transfer">
+              <div id="asset-transfer-dialog" waves-dialog ok-button-caption="TRANSFERIR" on-dialog-ok="transfer.submitTransfer(transfer.assetForm)">
+                <form id="transfer-asset-form" name="transfer.assetForm" novalidate ng-validate="transfer.validationOptions">
+                  <h2 class="sectionHeader">TRANSFERÊNCIA DO ATIVO</h2>
+                  <div class="balanceAmt">
+                    <p>Balanço do ativo: </p><span class="balancewaves">{{transfer.availableBalance | moneyLong:true}}</span><br/>
+                    <p>Balanço de Waves: </p><span class="balancewaves">{{transfer.feeAssetBalance | moneyLong:true}}</span>
+                  </div>
+                  <table class="wavesTable">
+                    <thead>
+                    <th>DESCRIÇÃO</th>
+                    <th>ENTRADA</th>
+                    </thead>
+                    <tbody>
+                    <tr>
+                      <td>Endereço do Destinatário</td>
+                      <td>
+                        <div class="form-field">
+                          <input class="wInput form-control" name="assetRecipient" type="text" placeholder="Destinatário" ng-model="transfer.recipient" />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Quantidade</td>
+                      <td>
+                        <div class="form-field">
+                          <input class="wInput form-control" name="assetAmount" type="text" placeholder="Amount" ng-model="transfer.amount" decimal-input-restrictor />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Attachment</td>
+                      <td>
+                        <div class="form-field">
+                          <textarea rows="2" class="wInput form-control" name="assetAttachment" ng-model="transfer.attachment"></textarea>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Fee</td>
+                      <td>
+                        <md-autocomplete md-input-name="assetFee" md-selected-item="transfer.autocomplete.selectedFee" md-search-text="transfer.autocomplete.searchText"
+                                         md-items="item in transfer.autocomplete.querySearch(transfer.autocomplete.searchText)"
+                                         md-item-text="item.amount.toString()" md-min-length="0" md-require-match="" md-no-cache="true"
+                                         md-menu-class="popup-autocomplete" class="fee-autocomplete">
+                          <md-item-template>
+                            <span md-highlight-text="transfer.autocomplete.searchText">{{item.displayText}}</span>
+                          </md-item-template>
+                        </md-autocomplete>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </form>
+              </div>
+              <div id="transfer-asset-confirmation" waves-dialog ok-button-caption="CONFIRM" ok-button-enabled="!transfer.broadcast.pending" on-dialog-ok="transfer.broadcastTransaction()">
+                <div class="dialog-confirmation">
+                  <p class="dialog-text">You are sending <span class="confirmation-value">{{transfer.confirm.amount | moneyLong:true}}</span> with
+                    <span class="confirmation-value">{{transfer.confirm.fee | moneyLong:true}}</span> fee <br/>
+                    to the address: <span class="confirmation-value">{{transfer.confirm.recipient}}</span>
+                  </p>
+                  <p class="dialog-text">Please <span class="fontBold"> CONFIRM </span>to execute or <span class="fontBold"> CANCEL </span> to discard.</p>
+                </div>
+              </div>
+            </div>
+            <div class="noDisp" ng-controller="assetReissueController as reissue">
+              <div id="asset-reissue-dialog" waves-dialog ok-button-caption="REISSUE" ok-button-enabled="!reissue.broadcast.pending" on-dialog-ok="reissue.submitReissue(reissue.assetForm)">
+                <form id="asset-reissue-form" name="reissue.assetForm" novalidate ng-validate="reissue.validationOptions">
+                  <h2 class="sectionHeader">ASSET REISSUE</h2>
+                  <div class="balanceAmt">
+                    <p>Total tokens issued: </p><span class="balancewaves">{{reissue.totalTokens.formatAmount()}}</span><br/>
+                    <p>Balaço de Waves: </p><span class="balancewaves">{{reissue.wavesBalance.formatAmount(true)}}</span>
+                  </div>
+                  <table class="wavesTable">
+                    <thead>
+                    <tr>
+                      <th>DESCRIPTION</th>
+                      <th>INPUT</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                      <td>Asset identifier</td>
+                      <td>{{reissue.assetId}}</td>
+                    </tr>
+                    <tr>
+                      <td>Asset name</td>
+                      <td>{{reissue.assetName}}</td>
+                    </tr>
+
+                    <tr>
+                      <td>Additional amount</td>
+                      <td>
+                        <div class="form-field">
+                          <input class="wInput form-control" name="assetAmount" type="text" placeholder="Amount" ng-model="reissue.amount" decimal-input-restrictor />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Reissue enabled</td>
+                      <td>
+                        <div class="form-field">
+                          <input class="wInput form-control" name="assetReissue" type="checkbox" ng-model="reissue.reissuable" />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Fee</td>
+                      <td>{{::reissue.fee.formatAmount(true)}} {{::reissue.fee.currency.displayName}}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </form>
+              </div>
+              <div id="asset-reissue-confirm-dialog" waves-dialog ok-button-caption="CONFIRM" ok-button-enabled="!reissue.broadcast.pending" on-dialog-ok="reissue.broadcastTransaction()">
+                <div class="dialog-confirmation">
+                  <p class="dialog-text">You are issuing an additional amount of <span class="confirmation-value">{{reissue.confirm.amount | moneyShort}}</span> tokens <br/>
+                    to the asset <span class="confirmation-value">{{reissue.confirm.amount.currency}}</span>
+                    with a fee of <span class="confirmation-value">{{reissue.confirm.fee | moneyLong:true}}</span>
+                  </p>
+                  <p class="dialog-text">Please <span class="fontBold"> CONFIRM </span>to execute or <span class="fontBold"> CANCEL </span> to discard.</p>
+                </div>
+              </div>
+            </div>
+            <div class="noDisp" ng-controller="massPaymentController as mass">
+              <div id="asset-mass-pay-dialog" waves-dialog ok-button-caption="ENVIAR" show-buttons="false">
+                <h2 class="sectionHeader">MASS PAYMENT</h2>
+                <ng-switch on="mass.stage">
+                  <p ng-if="mass.invalidPayment" class="notice-alert">{{mass.inputErrorMessage}}
+                    Please fix the error and load the file again.</p>
+                  <form id="massPaymentFilesForm" name="mass.form" novalidate ng-switch-when="loading" ng-validate="mass.validationOptions">
+                    <table class="wavesTable">
+                      <thead>
+                      <tr>
+                        <th>DESCRIPTION</th>
+                        <th>INPUT</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr>
+                        <td>Payments file</td>
+                        <td>
+                          <input type="file" name="inputFile" ng-model="mass.filename" file-select file-handler="mass.handleFile(file)" accept=".json,.csv"/>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Fee per transaction</td>
+                        <td>
+                          <md-autocomplete md-input-name="massPayFee" md-selected-item="mass.autocomplete.selectedFee" md-search-text="mass.autocomplete.searchText"
+                                           md-items="item in mass.autocomplete.querySearch(mass.autocomplete.searchText)"
+                                           md-item-text="item.amount.toString()" md-min-length="0" md-require-match="" md-no-cache="true"
+                                           md-menu-class="popup-autocomplete" class="fee-autocomplete">
+                            <md-item-template>
+                              <span md-highlight-text="mass.autocomplete.searchText">{{item.displayText}}</span>
+                            </md-item-template>
+                          </md-autocomplete>
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
+                    <br/>
+                    <ng-if ng-if="mass.loadingInProgress">
+                      <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+                      <br/>
+                    </ng-if>
+                    <div class="button-row">
+                      <button class="wButton wButton-neg" ng-disabled="mass.loadingInProgress" ng-click="mass.processInputFile(massPaymentFilesForm)">LOAD</button>
+                    </div>
+                  </form>
+                  <div class="massPayRecap wScroll" ng-switch-when="processing">
+                    <p>Please notice that only the first 10 transactions are shown below as a sample. Use the EXPORT functionality to export the full transaction details to clipboard.</p>
+                    <p>Total transactions: {{mass.summary.totalTransactions}} | Total amount: {{mass.summary.totalAmount.toTokens()}} | Total fee: {{mass.summary.totalFee.toTokens()}}</p>
+
+                    <table class="wavesTable">
+                      <thead>
+                      <tr>
+                        <td>RECIPIENT</td>
+                        <td>AMOUNT</td>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr ng-repeat="transfer in mass.transfers track by $index">
+                        <td>{{transfer.recipient}}</td>
+                        <td>{{transfer.amount}}</td>
+                      </tr>
+                      </tbody>
+                    </table>
+                    <br/>
+                    <div class="button-row">
+                      <button class="wButton wButton-neg fade" ngclipboard ngclipboard-text-provider="mass.transactionsToClipboard()" ngclipboard-success="mass.dataCopied()">EXPORT</button><span class="divider-2"></span>
+                      <button class="wButton wButton-neg fade" ng-click="mass.submitPayment()">ENVIAR</button><span class="divider-2"></span>
+                      <button class="wButton wButton-neg fade" ng-click="mass.cancel()">CANCEL</button>
+                    </div>
+                  </div>
+                </ng-switch>
+              </div>
+              <div id="asset-mass-pay-confirmation" waves-dialog ok-button-caption="CONFIRM" ok-button-enabled="!mass.broadcast.pending" on-dialog-ok="mass.broadcastTransaction()">
+                <div class="dialog-confirmation">
+                  <p class="dialog-text">You are sending <span class="confirmation-value">{{mass.confirm.amount | moneyLong:true}}</span> with
+                    <span class="confirmation-value">{{mass.confirm.fee | moneyLong:true}}</span> total fee <br/>
+                    to <span class="confirmation-value">{{mass.confirm.recipients}}</span> recipients.
+                  </p>
+                  <p class="dialog-text">Please <span class="fontBold"> CONFIRM </span>to execute or <span class="fontBold"> CANCEL </span> to discard.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- / PORTFOLIO TAB -->
+
+        <!-- DEX TAB -->
+        <waves-page ng-switch-when="exchange" page-title="DEX">
+          <waves-dex></waves-dex>
+        </waves-page>
+        <!-- / DEX TAB -->
+
+        <!-- LEASING TAB -->
+        <waves-page ng-switch-when="leasing" page-title="Leasing">
+          <waves-leasing></waves-leasing>
+        </waves-page>
+        <!-- / LEASING TAB -->
+
+        <!-- VOTING TAB -->
+        <div id="mBB-voting" class="mBB-content" ng-switch-when="voting">
+          <div class="phContent">
+            <h1>DECENTRALIZED VOTING</h1>
+            <br/>
+            <p>With a fair and automated system, Waves' voting area enables communities and projects to achieve consensus for critical decision-making that might otherwise prove difficult or controversial. A full set of analytic tools will also be available to follow up the voting process in real time.
+              <br/><br/>
+              The Decentralized Voting feature launch is estimated for the first quarter of 2017.
+            </p>
+            <br/><br/>
+            <img src="img/tab_vote_prev.svg" />
+          </div>
+        </div>
+        <!-- / VOTING TAB -->
+
+        <!-- HISTORY TAB -->
+        <div id="mBB-history" class="mBB-content" ng-switch-when="history" ng-controller="historyController as history">
+          <waves-transaction-history heading="ÚLTIMAS TRANSAÇÕES"
+                                     transactions="history.transactions"
+                                     limit-to="50"></waves-transaction-history>
+        </div>
+        <!-- / HISTORY TAB -->
+
+        <!-- TOKENS TAB -->
+        <div id="mBB-token" class="mBB-content" ng-switch-when="tokens">
+
+          <div ng-controller="tokenCreateController as ctrl">
+            <h2 class="sectionHeader">CRIAÇÃO DE TOKEN</h2>
+            <form id="create-asset-form" name="createAssetForm" novalidate ng-validate="ctrl.issuanceValidationOptions" ng-submit="ctrl.assetIssueConfirmation(createAssetForm, $event)">
+              <div class="balanceAmt">
+                <p>Balanço de Waves: </p><span class="balancewaves">{{ctrl.wavesBalance | moneyLong:true}}</span>
+              </div>
+              <table class="wavesTable">
+                <thead>
+                <tr>
+                  <td>DESCRIÇÃO</td>
+                  <td>ENTRADA</td>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <td><label for="assetName">Nome</label></td>
+                  <td><input id="assetName" name="assetName" type="text" class="wInput form-control" focus-me="true" ng-model="ctrl.asset.name" tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="Este campo define o NOME do seu<br/>ativo.<br/><br/>Pode conter até 16 caracteres."/></td>
+                </tr><br/>
+                <tr>
+                  <td><label for="assetDescription">Descrição</label></td>
+                  <td><textarea id="assetDescription" name="assetDescription" class="wInput" rows="3" ng-model="ctrl.asset.description" tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="Breve DESCRIÇÃO sobre o ativo.<br/>"></textarea></td>
+                </tr>
+                <tr>
+                  <td><label for="assetTotalTokens">Total de Tokens</label></td>
+                  <td><input id="assetTotalTokens" name="assetTotalTokens" class="wInput" type="text" ng-model="ctrl.asset.totalTokens" integer-input-restrictor tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="Este campo define o TOTAL TOKENS<br/>que seu ativo terá."/></td>
+                </tr>
+                <tr>
+                  <td><label for="assetTokenDecimalPlaces">Casas decimais</label></td>
+                  <td><input id="assetTokenDecimalPlaces" name="assetTokenDecimalPlaces" class="wInput" type="text" ng-model="ctrl.asset.decimalPlaces" integer-input-restrictor tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="Este campo define o número de CASAS DECIMAIS<br/>que seu token irá ter.<br/><br/>Exemplo: Três casas decimais os seus<br/>tokens serão exibidos assim: 2.168.<br/>Ou seja a menor fração de seu token será 0.001."/></td>
+                </tr>
+                <tr>
+                  <td><label for="assetReissuable">Re-emissível</label></td>
+                  <td><input id="assetReissuable" name="assetReissuable" type="checkbox" class="wInput" ng-model="ctrl.asset.reissuable" tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="RE-EMISSIBILIDADE significa que você poderá<br/>criar mais tokens posteriormente, eles serão<br/>incorporados ao TOTAL de tokens de seu ativo.<br/><br/>Um ativo NÃO RE-EMISSÍVEL significa que<br/>o total de tokens será limitado ao valor criado<br/>inicialmente."/></td>
+                </tr>
+                <tr class="noSelect">
+                  <td>Taxa</td>
+                  <td tooltipster tooltip-theme="tooltipster-theme1" tooltip-html title="A TAXA não pode ser alterada<br/>para esse processo.">{{::ctrl.asset.fee.formatAmount(true)}} {{::ctrl.asset.fee.currency.displayName}}</td>
+                </tr>
+                </tbody>
+              </table>
+              <div>
+                <button class="wButton wButton-neg fade" type="submit">SUBMETER</button><span class="divider-2"></span>
+                <button class="wButton wButton-neg fade" type="button" ng-click="ctrl.resetForm()">LIMPAR</button>
+              </div>
+            </form>
+
+            <div id="create-asset-confirmation" waves-dialog ok-button-caption="CONFIRM" ok-button-enabled="!ctrl.broadcast.pending" on-dialog-ok="ctrl.broadcastIssueTransaction()">
+              <div class="dialog-confirmation">
+                <p class="dialog-text">You are creating a <span class="confirmation-value">{{ctrl.confirm.reissuable}}</span> asset named
+                  <span class="confirmation-value">{{ctrl.confirm.name}}</span><br/> with
+                  <span class="confirmation-value">{{ctrl.confirm.totalTokens}}</span> of total tokens amount
+                </p>
+                <p class="dialog-text notice-alert" ng-if="!ctrl.asset.reissuable">Please note that flagging an asset as NON RE-ISSUABLE is permanent.<br/>
+                  Assets created as RE-ISSUABLE can later be changed to NON RE-ISSUABLE.<br/>However, assets flagged as NON RE-ISSUABLE can never be made RE-ISSUABLE.</p>
+                <p class="dialog-text">Please <span class="fontBold"> CONFIRM </span>to execute or <span class="fontBold"> CANCEL </span> to discard.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- / TOKENS TAB -->
+
+        <!-- MESSAGES TAB -->
+        <div id="mBB-messages" class="mBB-content" ng-switch-when="messages">
+          <div class="phContent">
+            <h1>MESSAGING CENTER</h1>
+            <br/>
+            <p>Soon to be renamed/rebranded as CONTACTS, this is an area in which users will be able to add other individuals or groups to several list types, providing an easy way to keep track of friends, execute regular, automated payments, and much more.
+              <br/><br/>
+              The Contacts area services are estimated to be completed on the first half of 2017.
+            </p>
+            <br/><br/>
+            <img src="img/tab_cont_prev.svg" />
+          </div>
+          <div id="addContact-wPop" class="wavesPop">
+            <img class="wPop-header" src="img/modal-header.svg" />
+            <form id="addContactForm" class="wPop-content">
+              <h2 class="sectionHeader">ADD CONTACT</h2>
+              <p>Fill the fields below in order to add a new contact to your list:</p>
+              <p>Name</p>
+              <input type="text" id="contactname" placeholder="" class="wInput" />
+
+              <p>Address</p>
+              <input type="text" id="contactaddress" placeholder="" class="wInput" />
+
+              <p>Email</p>
+              <input type="email" id="contactemail" placeholder="" class="wInput" />
+
+              <br/><br/>
+              <button id="addContactSubmit" class="wButton fade">ADD CONTACT</button>
+            </form>
+          </div>
+        </div>
+        <!-- / MESSAGES TAB -->
+
+        <!-- COMMUNITY TAB -->
+        <div id="mBB-community" class="mBB-content" ng-switch-when="community" ng-controller="communityController as community">
+          <!-- Temporary -->
+          <h2 class="sectionHeader">ÚTIMAS INFORMAÇÕES SOBRE BLOCOS</h2>
+          <p class="centerIt">
+          <div id="latestBlocks" class="wavesTable wScroll" >
+            <table>
+              <thead>
+              <tr class="fade">
+                <td>BLOCO</td>
+                <td>DATA</td>
+                <td>TRANSACÕES</td>
+                <td>GERADOR</td>
+              </tr>
+              </thead>
+              <tbody id="latestBlocksTable">
+              <tr class="fade">
+                <td>{{community.candidate.block}}</td>
+                <td><i>chegando</i></td>
+                <td>{{community.candidate.size}}</td>
+                <td><i>não confirmado</i></td>
+              </tr>
+              <tr class="fade" ng-repeat="block in community.blocks | orderBy:'timestamp':true">
+                <td>{{block.height}}</td>
+                <td>{{block.timestamp | formatting}}</td>
+                <td>{{block.transactions.length}}</td>
+                <td>
+                  <span class="clipSpan" tooltipster tooltip-theme="tooltipster-theme1" ngclipboard title="Copie esse endereço para o clipboard." data-clipboard-text="{{block.generator}}" ngclipboard-success="clipboardOk()">{{block.generator}}</span>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+
+          </p>
+        </div>
+        <!-- /COMMUNITY TAB -->
+      </section>
+    </section>
+  </div>
+</div> <!-- Wrapper div END -->
+
+<script src="js/waves-lite-client-mainnet-0.5.15.js"></script>
+
+
+</body>
+</html>
